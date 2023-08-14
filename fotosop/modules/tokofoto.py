@@ -23,7 +23,7 @@ def filter(image: np.ndarray, filter: str, value:int=0):
         grayscale = cuda_module.get_function("grayscale")
         
         cuda.memcpy_htod(image_gpu_input,image)
-        grayscale(image_gpu_input,image_gpu_output,rows,cols,block=(32,32,1),grid=((cols // 32) + 1,(rows // 32) + 1))
+        grayscale(image_gpu_input,image_gpu_output, np.int32(rows), np.int32(cols), block=(16,16,2), grid=((cols // 16) + 1,(rows // 16) + 1))
         cuda.Context.synchronize()
         cuda.memcpy_dtoh(image,image_gpu_output)
 
@@ -32,7 +32,7 @@ def filter(image: np.ndarray, filter: str, value:int=0):
         contrast = cuda_module.get_function("contrast")
 
         cuda.memcpy_htod(image_gpu_input,image)
-        contrast(image_gpu_input,image_gpu_output,rows,cols,value,block=(32,32,3),grid=((cols // 32) + 1,(rows // 32) + 1))
+        contrast(image_gpu_input, image_gpu_output,np.int32(rows), np.int32(cols), np.int32(value), block=(16, 16, 3), grid=((cols // 16) + 1, (rows // 16) + 1))
         cuda.Context.synchronize()
         cuda.memcpy_dtoh(image,image_gpu_output)
 
@@ -44,36 +44,38 @@ def filter(image: np.ndarray, filter: str, value:int=0):
         image_gpu_output.free()
 
         image_hls = cv2.cvtColor(image.astype(np.uint8),cv2.COLOR_BGR2HLS)
-        image_saturation = image_hls[:,:,2].astype(np.float32)
+        image_saturation = image_hls[:, :, 2].astype(np.float32)
 
         value = float(value) / 100
+        value = np.float32(value)
 
         image_gpu_input = cuda.mem_alloc(image_saturation.nbytes)
         image_gpu_output = cuda.mem_alloc(image_saturation.nbytes)
 
-        cuda.memcpy_htod(image_saturation,image)
-        saturation(image_gpu_input,image_gpu_output,rows,cols,value,block=(32,32,1),grid=((cols // 32) + 1,(rows // 32) + 1))
+        cuda.memcpy_htod(image_gpu_input,image_saturation)
+        saturation(image_gpu_input, image_gpu_output, np.int32(rows), np.int32(cols), np.float32(value), block=(16, 16, 1), grid=((cols // 16) + 1,(rows // 16) + 1))
         cuda.Context.synchronize()
         cuda.memcpy_dtoh(image_saturation,image_gpu_output)
 
-        image_hls[:,:,2] = image_saturation
-        image = cv2.cvtColor(image_hls.astype(np.uint32),cv2.COLOR_HLS2BGR)
+        image_hls[:, :, 2] = image_saturation
+        image_hls = image_hls.astype(np.uint8)
+        image = cv2.cvtColor(image_hls, cv2.COLOR_HLS2BGR)
     
     elif (filter == "blur"):
 
         blur = cuda_module.get_function("blur")
 
         cuda.memcpy_htod(image_gpu_input,image)
-        blur(image_gpu_input,image_gpu_output,rows,cols,value,block=(32,32,3),grid=((cols // 32) + 1,(rows // 32) + 1))
+        blur(image_gpu_input, image_gpu_output, np.int32(rows), np.int32(cols), np.int32(value), block=(16,16,3), grid=((cols // 16) + 1,(rows // 16) + 1))
         cuda.Context.synchronize()
         cuda.memcpy_dtoh(image,image_gpu_output)
 
     elif (filter == "edge_detection"):
 
-        blur = cuda_module.get_function("edge_detection")
+        edge_detection = cuda_module.get_function("edge_detection")
 
         cuda.memcpy_htod(image_gpu_input,image)
-        blur(image_gpu_input,image_gpu_output,rows,cols,value,block=(32,32,1),grid=((cols // 32) + 1,(rows // 32) + 1))
+        edge_detection(image_gpu_input, image_gpu_output, np.int32(rows), np.int32(cols), block=(16,16,1), grid=((cols // 16) + 1,(rows // 16) + 1))
         cuda.Context.synchronize()
         cuda.memcpy_dtoh(image,image_gpu_output)
 
