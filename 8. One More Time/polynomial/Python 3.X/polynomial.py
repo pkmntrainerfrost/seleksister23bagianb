@@ -34,13 +34,10 @@ def main():
 
     parser = argparse.ArgumentParser(description="Process the path argument.")
     
-    # Add the path argument
     parser.add_argument("path", type=str, help="Path to the file")
 
-    # Parse the arguments
     args = parser.parse_args()
 
-    # Check the number of arguments and file existence
     if args.path:
         if not os.path.exists(args.path):
             print(f"Error: The file at '{args.path}' doesn't exist!")

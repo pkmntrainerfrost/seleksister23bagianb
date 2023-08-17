@@ -31,8 +31,8 @@ end
 
 def main
   
-  if ARGV.length != 1
-    puts "Ngaco"
+  if ARGV.length < 1
+    puts "Error: Please provide a file path."
   else
     path = ARGV[0]
     unless File.exist?(path)

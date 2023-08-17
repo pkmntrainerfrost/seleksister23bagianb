@@ -1,7 +1,7 @@
 import scala.io.Source
 import java.io.FileNotFoundException
 
-object InterpolationProgram {
+object polynomial {
 
   def interpolate(d: Int, x: Array[Double], y: Array[Double]): Array[Double] = {
     val p = Array.fill(d)(0.0)

@@ -89,5 +89,4 @@ func main() {
 	for _, val := range p {
 		fmt.Print(val, " ")
 	}
-	fmt.Println()
 }
