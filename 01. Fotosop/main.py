@@ -1,6 +1,6 @@
 import sys
 import typing
-from PyQt5.QtCore import QObject
+from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
@@ -58,6 +58,8 @@ class MainWindow(QMainWindow):
         self.grayscalemode = [False]
         self.edgemode = [False]
         self.cameramode = [False]
+        self.kval = [0]
+        self.key = ["II3150 Sistem Multimedia"]
 
         self.image_path = ""
 
@@ -118,6 +120,16 @@ class MainWindow(QMainWindow):
         blur_button.setDisabled(True)
         self.blur_button = blur_button
 
+        key_button = QAction("Set Key", self)
+        key_button.triggered.connect(lambda: self.onSetClick(self.key))
+        key_button.setDisabled(True)
+        self.key_button = key_button
+
+        kval_button = QAction("Set K-Value", self)
+        kval_button.triggered.connect(lambda: self.onSliderClick("K-Value",0,255,self.kval))
+        kval_button.setDisabled(True)
+        self.kval_button = kval_button
+
         file_menu = menu.addMenu("File")
         file_menu.addAction(open_button)
         file_menu.addAction(save_button)
@@ -133,6 +145,10 @@ class MainWindow(QMainWindow):
         effects_menu = menu.addMenu("Effects")
         effects_menu.addAction(edge_button)
         effects_menu.addAction(blur_button)
+
+        watermarking_menu = menu.addMenu("Watermark")
+        watermarking_menu.addAction(key_button)
+        watermarking_menu.addAction(kval_button)
 
         toolbar = QToolBar()
         
@@ -193,6 +209,8 @@ class MainWindow(QMainWindow):
             self.save_button.setDisabled(True)
             self.save_as_button.setDisabled(True)
             self.reset_button.setDisabled(True)
+            self.key_button.setDisabled(True)
+            self.kval_button.setDisabled(True)
             
 
             self.cameramode[0] = True
@@ -213,6 +231,8 @@ class MainWindow(QMainWindow):
             self.save_button.setDisabled(True)
             self.save_as_button.setDisabled(True)
             self.reset_button.setDisabled(True)
+            self.key_button.setDisabled(True)
+            self.kval_button.setDisabled(True)
 
             self.reset_vals()
             self.cameramode = [False]
@@ -227,6 +247,8 @@ class MainWindow(QMainWindow):
         self.edge_button.setDisabled(False)
         self.saturation_button.setDisabled(False)
         self.reset_button.setDisabled(False)
+        self.key_button.setDisabled(False)
+        self.kval_button.setDisabled(False)
 
         self.image_path = ""
         self.image_label.clear()
@@ -250,6 +272,13 @@ class MainWindow(QMainWindow):
     def onToggleClick(self,button,attr):
         
         attr[0] = button.isChecked()
+        self.update_preview()
+
+    def onSetClick(self,attr):
+
+        new_key, done = QInputDialog.getText(self,"Set Key","Key")
+        if (new_key != ""):
+            attr[0] = new_key
         self.update_preview()
 
     def open_image(self):
@@ -303,6 +332,8 @@ class MainWindow(QMainWindow):
         self.grayscale_button.setChecked(False)
         self.edgemode = [False]
         self.edge_button.setChecked(False)
+        self.key = ["II3150 Sistem Multimedia"]
+        self.kval = [0]
         
 
     def load_image(self,file_name):
@@ -342,13 +373,15 @@ class MainWindow(QMainWindow):
         self.save_button.setDisabled(False)
         self.save_as_button.setDisabled(False)
         self.reset_button.setDisabled(False)
+        self.key_button.setDisabled(False)
+        self.kval_button.setDisabled(False)
 
     def update_preview(self):
 
         if not self.cameramode[0]:
             self.preview_image = self.applied_image
 
-        if self.grayscalemode[0]:
+        if self.grayscalemode[0] or self.kval[0] != 0:
             self.preview_image = filter(self.preview_image.astype(np.float32),"grayscale")
         if self.edgemode[0]:
             self.preview_image = filter(self.preview_image.astype(np.float32),"edge_detection")
@@ -359,6 +392,9 @@ class MainWindow(QMainWindow):
             self.preview_image = filter(self.preview_image.astype(np.float32),"saturation",self.saturationval[0])
         if self.blurval[0] != 0:    
             self.preview_image = filter(self.preview_image.astype(np.float32),"blur",self.blurval[0])
+        
+        if self.kval[0] != 0:
+            self.preview_image = filter(self.preview_image.astype(np.float32),"watermark",self.kval[0],self.key[0])
 
         rgb_image = cv2.cvtColor(self.preview_image, cv2.COLOR_BGR2RGB)
 

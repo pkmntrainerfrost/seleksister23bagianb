@@ -7,11 +7,11 @@ import cv2
 
 cuda_module = SourceModule(open("kernel/kernel.cu").read())
 
-# makasih banyak bang aw dah ngajarin
+# makasih banyak bang awe dah ngajarin
 # buat kak asisten kalo ada yang "gk diubah" itu artinya saya kurang mengerti itu buat apa :P
 # if it ain't broke don't fix it ygy
 
-def filter(image: np.ndarray, filter: str, value:int=0):
+def filter(image: np.ndarray, filter: str, value:int=0, key:str=""):
 
     rows, cols, channels = image.shape
 
@@ -78,6 +78,30 @@ def filter(image: np.ndarray, filter: str, value:int=0):
         edge_detection(image_gpu_input, image_gpu_output, np.int32(rows), np.int32(cols), block=(16,16,1), grid=((cols // 16) + 1,(rows // 16) + 1))
         cuda.Context.synchronize()
         cuda.memcpy_dtoh(image,image_gpu_output)
+
+    elif (filter == "watermark"):
+
+        watermark = cuda_module.get_function("watermark")
+
+        np.random.seed((hash(key) % (2**32)))
+        
+        watermark_singal = np.random.normal(0,1,(rows,cols))
+        mapped_watermark_singal = np.where(watermark_singal > 0, 1, -1).astype(np.float32)
+        # signal_input = cuda.mem_alloc(mapped_watermark_singal.nbytes)
+
+        """ cuda.memcpy_htod(image_gpu_input,image)
+        cuda.memcpy_htod(signal_input,mapped_watermark_singal)
+        watermark(image_gpu_input,image_gpu_output,signal_input, np.int32(rows), np.int32(cols), np.int32(value), block=(16,16,2), grid=((cols // 16) + 1,(rows // 16) + 1))
+        cuda.Context.synchronize()
+        cuda.memcpy_dtoh(image,image_gpu_output)
+
+        signal_input.free() """
+
+        # Broadcasting 'w' to match the shape of 'i' and performing the operation
+        image += value * watermark_singal[:, :, np.newaxis]
+
+        # Clipping values to be within [0, 255]
+        np.clip(image, 0, 255, out=image)
 
     image_gpu_input.free()
     image_gpu_output.free()

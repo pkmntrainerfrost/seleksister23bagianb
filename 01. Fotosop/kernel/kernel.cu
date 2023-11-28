@@ -1,3 +1,28 @@
+__global__ void watermark(const float* image_in, float* image_out, const float* watermark, int rows, int cols, int k) {
+
+    int col = threadIdx.x + blockIdx.x * blockDim.x;
+    int row = threadIdx.y + blockIdx.y * blockDim.y;
+
+    if (row < rows && col < cols) {
+
+        int i = (row * cols + col) * 3;
+
+        float watermark_multiplied = static_cast<float>(k * watermark[i]);
+        
+        float watermarked = static_cast<float>(image_in[i] + watermark_multiplied);
+
+        watermarked = watermarked > 255 ? 255 : watermarked;
+        watermarked = watermarked < 0 ? 0 : watermarked;
+
+        image_out[i] = watermarked;
+        image_out[i + 1] = watermarked;
+        image_out[i + 2] = watermarked;
+
+    }
+
+}
+
+
 __global__ void grayscale(const float* image_in, float* image_out, int rows, int cols) {
 
     int col = threadIdx.x + blockIdx.x * blockDim.x;
