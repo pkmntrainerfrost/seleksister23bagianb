@@ -6,8 +6,9 @@ __global__ void watermark(const float* image_in, float* image_out, const float* 
     if (row < rows && col < cols) {
 
         int i = (row * cols + col) * 3;
+        int j = (row * cols + col);
 
-        float watermark_multiplied = static_cast<float>(k * watermark[i]);
+        float watermark_multiplied = static_cast<float>(k * watermark[j]);
         
         float watermarked = static_cast<float>(image_in[i] + watermark_multiplied);
 

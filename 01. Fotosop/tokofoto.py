@@ -82,26 +82,27 @@ def filter(image: np.ndarray, filter: str, value:int=0, key:str=""):
     elif (filter == "watermark"):
 
         watermark = cuda_module.get_function("watermark")
-
+        # Bikin sinyal
         np.random.seed((hash(key) % (2**32)))
-        
         watermark_singal = np.random.normal(0,1,(rows,cols))
         mapped_watermark_singal = np.where(watermark_singal > 0, 1, -1).astype(np.float32)
-        # signal_input = cuda.mem_alloc(mapped_watermark_singal.nbytes)
 
-        """ cuda.memcpy_htod(image_gpu_input,image)
+        # Versi cuda
+        signal_input = cuda.mem_alloc(mapped_watermark_singal.nbytes)
+
+        cuda.memcpy_htod(image_gpu_input,image)
         cuda.memcpy_htod(signal_input,mapped_watermark_singal)
         watermark(image_gpu_input,image_gpu_output,signal_input, np.int32(rows), np.int32(cols), np.int32(value), block=(16,16,2), grid=((cols // 16) + 1,(rows // 16) + 1))
         cuda.Context.synchronize()
         cuda.memcpy_dtoh(image,image_gpu_output)
 
-        signal_input.free() """
+        signal_input.free()
 
-        # Broadcasting 'w' to match the shape of 'i' and performing the operation
-        image += value * watermark_singal[:, :, np.newaxis]
+        # Versi numpy doang
 
-        # Clipping values to be within [0, 255]
-        np.clip(image, 0, 255, out=image)
+        # image += value * watermark_singal[:, :, np.newaxis]
+
+        # np.clip(image, 0, 255, out=image)
 
     image_gpu_input.free()
     image_gpu_output.free()
